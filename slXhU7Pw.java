@@ -2,7 +2,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
-public class Bai3 {
+public class slXhU7Pw {
     public static void main(String[] args) {
         String serverHost = "36.50.135.242";
         int serverPort = 2206;
@@ -43,7 +43,15 @@ public class Bai3 {
                 List<Integer> uniqueNums = new ArrayList<>(new HashSet<>(numbers));
                 uniqueNums.sort(Collections.reverseOrder());
 
-                int secondMax = uniqueNums.size() >= 2 ? uniqueNums.get(1) : uniqueNums.get(0);
+                // Lấy số lớn thứ 2 nếu có từ 2 số khác nhau trở lên, ngược lại lấy số duy nhất
+                int secondMax;
+                if (uniqueNums.size() >= 2) {
+                    secondMax = uniqueNums.get(1);
+                } else {
+                    secondMax = uniqueNums.get(0);
+                }
+                
+                // Tìm vị trí xuất hiện đầu tiên trong danh sách ban đầu
                 int index = numbers.indexOf(secondMax);
 
                 String result = secondMax + "," + index;
@@ -55,12 +63,8 @@ public class Bai3 {
                 System.out.println("Đã gửi kết quả thành công");
             }
 
-        } catch (SocketTimeoutException e) {
-            System.out.println("Lỗi: Quá thời gian giao tiếp 5s");
-        } catch (IOException e) {
-            System.out.println("Lỗi kết nối mạng: " + e.getMessage());
-        } catch (NumberFormatException e) {
-            System.out.println("Lỗi: Dữ liệu server gửi không phải số nguyên");
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }
