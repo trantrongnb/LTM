@@ -1,0 +1,30 @@
+# Trọng cần làm gì (B23DCCN850)
+
+Làm trên nhánh `TranVanTrong`. Việc đầu tiên: `git merge main`, rồi chạy thử `docker compose up --build`
+(hướng dẫn trong README). Chỉ sửa trong `backend/.../trong/`, `bot/`, migration mới và service `bot` trong `docker-compose.yml`.
+Không sửa `matching/`, `network/`, `frontend/` (thấy lỗi thì báo).
+
+## 1. Bot (quan trọng nhất)
+
+Bot hiện tại gọi `/api/demo`, `/fills` nên không chạy được với hệ thống thật (trả 404), vì vậy bảng giá không biến động.
+
+- [ ] Sửa bot (Python asyncio) để đăng nhập bằng **token Keycloak** rồi gửi `LOGIN {accessToken}` qua `ws://backend:8080/ws`, sau đó đặt/hủy lệnh như người chơi thật.
+  Bản mẫu chạy được: `scripts/market-sim.mjs` (cách lấy token, tạo user, đặt lệnh). Không dùng `/api/demo`, `/fills`.
+- [ ] Đóng gói bot thành service trong `docker-compose.yml` (profile `bot`) với `bot/Dockerfile`, chạy bằng `docker compose --profile bot up`.
+- [ ] Hai chế độ: `market` (bot chạy liên tục để giá luôn nhảy) và `load` (tăng dần 200 → 1.000 kết nối, xuất báo cáo JSON:
+  độ trễ đặt lệnh p50/p95/p99, lệnh/giây, số lệnh bị từ chối, số kết nối bị đóng).
+- [ ] Cuối `load`, kiểm tra trong PostgreSQL: tổng tiền và tổng cổ phiếu không đổi, không có số dư âm.
+
+## 2. Phần backend (Java)
+
+- [ ] **BroadcastService:** viết `BroadcastService implements MatchingListener` (thay `BroadcastingMatchingListener` của Hùng): nhận sự kiện từ engine, đẩy giá/sổ lệnh cho mọi client,
+  số dư/lệnh chỉ gửi riêng chủ tài khoản. Xong thì báo Hùng đổi cấu hình.
+- [ ] **Test mất kết nối:** A đặt lệnh → A rớt mạng → B khớp lệnh với A → A `RESUME` → snapshot của A khớp PostgreSQL.
+- [ ] **Dọn bảng `exchange_sync_events`:** migration `V4` + tác vụ xóa dữ liệu cũ (hiện bảng này chỉ tăng, không ai dọn).
+- [ ] **Số liệu qua Actuator** (`/actuator/metrics`): số kết nối WebSocket, số message đã đẩy, số client bị đóng vì chậm.
+
+## Xong khi
+
+- `docker compose --profile bot up` làm bảng giá nhảy trên giao diện.
+- Bot `load` chạy 1.000 kết nối, báo cáo không có vi phạm, log backend không có `ERROR`.
+- Các test của bạn pass và `./mvnw verify` vẫn pass.
